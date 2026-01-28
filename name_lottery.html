@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>姓名抽签系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: block;
+            margin: 20px auto 0;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 10px;
+            color: #667eea;
+            text-align: center;
+        }
+
+        .column-selector {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .column-selector label {
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .column-selector input[type="number"] {
+            width: 80px;
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .column-selector input[type="number"]:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .column-selector input[type="number"]:hover {
+            border-color: #764ba2;
+        }
+
+        /* 抽签页面样式 - 华丽赌场风格 */
+        #lottery-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background:
+                radial-gradient(ellipse at top, rgba(139, 0, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(139, 0, 0, 0.3) 0%, transparent 50%),
+                linear-gradient(180deg, #2d0a0a 0%, #1a0505 50%, #0d0202 100%);
+            overflow: hidden;
+        }
+
+        /* 天鹅绒窗帘效果 */
+        #lottery-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(139, 0, 0, 0.1) 0px,
+                    rgba(139, 0, 0, 0.2) 50px,
+                    rgba(139, 0, 0, 0.1) 100px
+                );
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* 星光背景 - 改为暖色调 */
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #ffe4b5;
+            border-radius: 50%;
+            box-shadow: 0 0 4px #ffd700;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+
+        /* 动态粒子 - 改为金色 */
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, #ffd700, #ff8c00);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 8s infinite;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        .slot-machine-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            gap: 50px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 老虎机外框 - 黄铜/金色质感 */
+        .slot-machine-frame {
+            position: relative;
+            padding: 70px 60px;
+            background:
+                linear-gradient(145deg, #b8860b 0%, #daa520 50%, #b8860b 100%);
+            border-radius: 30px;
+            box-shadow:
+                0 50px 120px rgba(0, 0, 0, 0.9),
+                inset 0 3px 6px rgba(255, 255, 255, 0.4),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.6);
+            transform-style: preserve-3d;
+            border: 8px solid #8b6914;
+        }
+
+        /* 巴洛克式装饰边框 */
+        .slot-machine-frame::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 6px ridge #ffd700;
+            border-radius: 25px;
+            pointer-events: none;
+            box-shadow:
+                0 0 30px rgba(255, 215, 0, 0.6),
+                inset 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+
+        /* 顶部装饰雕刻效果 */
+        .slot-machine-frame::after {
+            content: '◈ ❖ ◈';
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff8dc;
+            font-size: 24px;
+            text-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(255, 215, 0, 0.6);
+            letter-spacing: 15px;
+            pointer-events: none;
+        }
+
+        /* 顶部装饰灯带 - Marquee风格圆形灯泡 */
+        .top-lights {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .light-bulb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 35% 35%,
+                    #ffffff 0%,
+                    #fff8dc 30%,
+                    #ffd700 100%);
+            border: 3px solid #8b6914;
+            box-shadow:
+                0 0 20px #ffe4b5,
+                0 0 40px #ffd700,
+                inset -2px -2px 4px rgba(0, 0, 0, 0.3),
+                inset 2px 2px 4px rgba(255, 255, 255, 0.6);
+            animation: bulb-glow 1.5s infinite;
+        }
+
+        .light-bulb:nth-child(2) { animation-delay: 0.3s; }
+        .light-bulb:nth-child(3) { animation-delay: 0.6s; }
+        .light-bulb:nth-child(4) { animation-delay: 0.9s; }
+        .light-bulb:nth-child(5) { animation-delay: 1.2s; }
+
+        @keyframes bulb-glow {
+            0%, 100% {
+                opacity: 0.5;
+                box-shadow:
+                    0 0 10px #ffe4b5,
+                    0 0 20px #ffd700,
+                    inset -2px -2px 4px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                opacity: 1;
+                box-shadow:
+                    0 0 30px #ffe4b5,
+                    0 0 60px #ffd700,
+                    0 0 90px #ff8c00,
+                    inset -2px -2px 4px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        /* 装饰灯带 - 暖色调 */
+        .neon-strip {
+            position: absolute;
+            height: 10px;
+            background: linear-gradient(90deg,
+                #ffd700 0%, #ff8c00 25%, #ffd700 50%, #ff8c00 75%, #ffd700 100%);
+            box-shadow:
+                0 0 20px rgba(255, 215, 0, 0.8),
+                0 0 40px rgba(255, 140, 0, 0.6);
+            animation: strip-glow 2s linear infinite;
+        }
+
+        .neon-strip.top {
+            top: 0;
+            left: 0;
+            right: 0;
+            border-radius: 30px 30px 0 0;
+        }
+
+        .neon-strip.bottom {
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 0 0 30px 30px;
+        }
+
+        @keyframes strip-glow {
+            0% {
+                box-shadow:
+                    0 0 20px rgba(255, 215, 0, 0.8),
+                    0 0 40px rgba(255, 140, 0, 0.6);
+            }
+            50% {
+                box-shadow:
+                    0 0 30px rgba(255, 215, 0, 1),
+                    0 0 60px rgba(255, 140, 0, 0.8);
+            }
+            100% {
+                box-shadow:
+                    0 0 20px rgba(255, 215, 0, 0.8),
+                    0 0 40px rgba(255, 140, 0, 0.6);
+            }
+        }
+
+        .slot-machine {
+            display: flex;
+            gap: 15px;
+            position: relative;
+        }
+
+        /* 转轮容器 - 黄铜金色边框 */
+        .reel-container {
+            width: 90px;
+            height: 450px;
+            background:
+                linear-gradient(180deg,
+                    #1a1410 0%,
+                    #2d2418 30%,
+                    #2d2418 70%,
+                    #1a1410 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            border: 5px solid #b8860b;
+            box-shadow:
+                inset 0 0 40px rgba(0, 0, 0, 0.9),
+                0 0 25px rgba(255, 215, 0, 0.7),
+                0 0 50px rgba(255, 215, 0, 0.5),
+                0 10px 40px rgba(0, 0, 0, 0.9),
+                inset 0 2px 0 rgba(255, 215, 0, 0.3),
+                inset 0 -2px 0 rgba(139, 69, 19, 0.8);
+            transform: perspective(800px) rotateY(0deg);
+            transition: transform 0.3s;
+        }
+
+        .reel-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .reel-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* 金色装饰条纹 - 红色宝石点缀 */
+        .reel-container .gold-accent {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background:
+                linear-gradient(90deg,
+                    transparent,
+                    #b8860b 20%,
+                    #ffd700 50%,
+                    #b8860b 80%,
+                    transparent);
+            box-shadow:
+                0 0 15px rgba(255, 215, 0, 0.8),
+                0 1px 0 rgba(255, 255, 255, 0.3);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .reel-container .gold-accent::before {
+            content: '◆';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: #dc143c;
+            font-size: 12px;
+            text-shadow:
+                0 0 10px rgba(220, 20, 60, 0.8),
+                0 0 20px rgba(220, 20, 60, 0.5);
+        }
+
+        .reel-container .gold-accent.top {
+            top: 35%;
+        }
+
+        .reel-container .gold-accent.bottom {
+            bottom: 35%;
+        }
+
+        .reel {
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: none;
+        }
+
+        .reel.spinning {
+            animation: spin 0.1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: translateY(-50%);
+            }
+            to {
+                transform: translateY(calc(-50% - 100px));
+            }
+        }
+
+        .reel-item {
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 56px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow:
+                0 0 10px rgba(255, 215, 0, 0.8),
+                0 0 20px rgba(255, 215, 0, 0.6),
+                0 0 30px rgba(255, 215, 0, 0.4),
+                2px 2px 4px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        /* 转轮停止时的高光效果 */
+        .reel-container.stopped {
+            animation: stop-flash 0.5s ease-out;
+        }
+
+        @keyframes stop-flash {
+            0% {
+                box-shadow:
+                    inset 0 0 30px rgba(0, 0, 0, 0.9),
+                    0 0 20px rgba(255, 215, 0, 0.6),
+                    0 0 40px rgba(255, 215, 0, 0.4);
+            }
+            50% {
+                box-shadow:
+                    inset 0 0 30px rgba(0, 0, 0, 0.9),
+                    0 0 40px rgba(255, 215, 0, 1),
+                    0 0 80px rgba(255, 215, 0, 0.8),
+                    0 0 120px rgba(255, 237, 78, 0.6);
+            }
+            100% {
+                box-shadow:
+                    inset 0 0 30px rgba(0, 0, 0, 0.9),
+                    0 0 20px rgba(255, 215, 0, 0.6),
+                    0 0 40px rgba(255, 215, 0, 0.4);
+            }
+        }
+
+        .lever-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 拉杆 - 黄铜金属质感 */
+        .lever {
+            width: 38px;
+            height: 220px;
+            background:
+                linear-gradient(90deg,
+                    #8b6914 0%,
+                    #b8860b 25%,
+                    #daa520 50%,
+                    #b8860b 75%,
+                    #8b6914 100%);
+            border-radius: 19px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.7),
+                inset 3px 0 6px rgba(255, 255, 255, 0.4),
+                inset -3px 0 6px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
+            border: 2px solid #654321;
+        }
+
+        .lever::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 6px;
+            width: 6px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 3px;
+            box-shadow: 1px 0 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .lever:hover {
+            transform: translateY(-5px);
+            box-shadow:
+                0 15px 40px rgba(0, 0, 0, 0.8),
+                inset 3px 0 6px rgba(255, 255, 255, 0.5),
+                inset -3px 0 6px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 透明水晶球头 */
+        .lever-ball {
+            width: 75px;
+            height: 75px;
+            background:
+                radial-gradient(circle at 35% 35%,
+                    rgba(255, 255, 255, 0.9) 0%,
+                    rgba(255, 255, 255, 0.6) 20%,
+                    rgba(173, 216, 230, 0.4) 40%,
+                    rgba(135, 206, 250, 0.3) 60%,
+                    rgba(100, 149, 237, 0.2) 100%);
+            border-radius: 50%;
+            position: absolute;
+            top: -38px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow:
+                0 10px 40px rgba(135, 206, 250, 0.6),
+                inset -8px -8px 20px rgba(0, 0, 0, 0.2),
+                inset 8px 8px 20px rgba(255, 255, 255, 0.8),
+                0 0 30px rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* 水晶球内的高光 */
+        .lever-ball::after {
+            content: '';
+            position: absolute;
+            top: 18%;
+            left: 28%;
+            width: 35%;
+            height: 35%;
+            background:
+                radial-gradient(circle,
+                    rgba(255, 255, 255, 0.95),
+                    rgba(255, 255, 255, 0.7) 40%,
+                    transparent 70%);
+            border-radius: 50%;
+        }
+
+        .lever.pulled {
+            transform: translateY(80px);
+        }
+
+        /* 返回按钮样式 */
+        .back-button {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        /* 历史记录看板样式 */
+        .history-board {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 280px;
+            max-height: 70vh;
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 20px;
+            padding: 20px;
+            border: 3px solid #ffd700;
+            box-shadow:
+                0 0 30px rgba(255, 215, 0, 0.4),
+                0 20px 60px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+
+        .history-board h2 {
+            color: #ffd700;
+            font-size: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .history-list {
+            max-height: calc(70vh - 120px);
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: #ffd700;
+            border-radius: 4px;
+        }
+
+        .history-item {
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+            color: #ffd700;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            border-left: 3px solid #ffd700;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .history-item-number {
+            background: #ffd700;
+            color: #1a1a1a;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .clear-button {
+            width: 100%;
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+        }
+
+        .clear-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 68, 68, 0.5);
+        }
+
+        .history-empty {
+            color: #888;
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        /* 特效样式 */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .firework {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            font-size: 30px;
+            animation: firework 2s ease-out forwards;
+        }
+
+        @keyframes firework {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0);
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--x), var(--y)) scale(1.5);
+            }
+        }
+
+        .emoji-rain {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            font-size: 40px;
+            animation: fall 3s linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 上传页面 -->
+    <div id="upload-page" class="container">
+        <h1>🎰 姓名抽签系统</h1>
+        <div class="upload-area" id="upload-area">
+            <p>📁 点击或拖拽CSV文件到这里</p>
+            <p style="font-size: 12px; color: #999;">支持多列CSV文件</p>
+            <input type="file" id="file-input" accept=".csv">
+        </div>
+        <div class="column-selector">
+            <label for="column-input">姓名所在列数：</label>
+            <input type="number" id="column-input" min="1" value="1" placeholder="1">
+        </div>
+        <div id="file-info" class="file-info" style="display: none;"></div>
+        <button class="btn" id="start-btn" disabled>开始抽签</button>
+    </div>
+
+    <!-- 抽签页面 -->
+    <div id="lottery-page">
+        <!-- 星光背景 -->
+        <div class="stars" id="stars"></div>
+
+        <!-- 返回按钮 -->
+        <button class="back-button" id="back-btn">返回</button>
+
+        <!-- 历史记录看板 -->
+        <div class="history-board">
+            <h2>抽签记录</h2>
+            <div class="history-list" id="history-list">
+                <div class="history-empty">暂无记录</div>
+            </div>
+            <button class="clear-button" id="clear-btn">清除记录</button>
+        </div>
+
+        <div class="slot-machine-container">
+            <div class="slot-machine-frame">
+                <!-- 霓虹灯带 -->
+                <div class="neon-strip top"></div>
+                <div class="neon-strip bottom"></div>
+
+                <!-- 顶部装饰灯 -->
+                <div class="top-lights">
+                    <div class="light-bulb"></div>
+                    <div class="light-bulb"></div>
+                    <div class="light-bulb"></div>
+                    <div class="light-bulb"></div>
+                    <div class="light-bulb"></div>
+                </div>
+
+                <div class="slot-machine">
+                    <div class="reel-container">
+                        <div class="gold-accent top"></div>
+                        <div class="gold-accent bottom"></div>
+                        <div class="reel" id="reel-0">
+                            <div class="reel-item"></div>
+                        </div>
+                    </div>
+                    <div class="reel-container">
+                        <div class="gold-accent top"></div>
+                        <div class="gold-accent bottom"></div>
+                        <div class="reel" id="reel-1">
+                            <div class="reel-item"></div>
+                        </div>
+                    </div>
+                    <div class="reel-container">
+                        <div class="gold-accent top"></div>
+                        <div class="gold-accent bottom"></div>
+                        <div class="reel" id="reel-2">
+                            <div class="reel-item"></div>
+                        </div>
+                    </div>
+                    <div class="reel-container">
+                        <div class="gold-accent top"></div>
+                        <div class="gold-accent bottom"></div>
+                        <div class="reel" id="reel-3">
+                            <div class="reel-item"></div>
+                        </div>
+                    </div>
+                    <div class="reel-container">
+                        <div class="gold-accent top"></div>
+                        <div class="gold-accent bottom"></div>
+                        <div class="reel" id="reel-4">
+                            <div class="reel-item"></div>
+                        </div>
+                    </div>
+                    <div class="reel-container">
+                        <div class="gold-accent top"></div>
+                        <div class="gold-accent bottom"></div>
+                        <div class="reel" id="reel-5">
+                            <div class="reel-item"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lever-container">
+                <div class="lever" id="lever">
+                    <div class="lever-ball"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let nameList = [];
+        let selectedHistory = []; // 已抽中的姓名历史记录
+
+        // 创建星光背景
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // 创建动态粒子
+        function createParticles() {
+            const lotteryPage = document.getElementById('lottery-page');
+            setInterval(() => {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.bottom = '0';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                particle.style.animationDelay = Math.random() * 2 + 's';
+                lotteryPage.appendChild(particle);
+
+                setTimeout(() => particle.remove(), 8000);
+            }, 300);
+        }
+
+        // 上传页面逻辑
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const startBtn = document.getElementById('start-btn');
+        const uploadPage = document.getElementById('upload-page');
+        const lotteryPage = document.getElementById('lottery-page');
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#f0f4ff';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.background = 'transparent';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = 'transparent';
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.csv')) {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                parseCSV(text);
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function parseCSV(text) {
+            const columnInput = document.getElementById('column-input');
+            const columnNumber = parseInt(columnInput.value) || 1;
+            const columnIndex = columnNumber - 1; // 转换为0-based索引
+
+            const lines = text.split('\n').filter(line => line.trim());
+            nameList = lines.map(line => {
+                const columns = line.split(',');
+                // 检查指定的列是否存在
+                if (columnIndex >= 0 && columnIndex < columns.length) {
+                    return columns[columnIndex].trim();
+                }
+                return '';
+            }).filter(name => name);
+
+            if (nameList.length > 0) {
+                fileInfo.style.display = 'block';
+                fileInfo.textContent = `✅ 已加载 ${nameList.length} 个姓名（第 ${columnNumber} 列）`;
+                startBtn.disabled = false;
+            } else {
+                fileInfo.style.display = 'block';
+                fileInfo.textContent = `❌ 第 ${columnNumber} 列没有找到有效姓名，请检查列数设置`;
+                fileInfo.style.background = '#ffe0e0';
+                fileInfo.style.color = '#cc0000';
+                startBtn.disabled = true;
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            uploadPage.style.display = 'none';
+            lotteryPage.style.display = 'block';
+            createStars();
+            createParticles();
+        });
+
+        // 返回按钮功能
+        const backBtn = document.getElementById('back-btn');
+        backBtn.addEventListener('click', () => {
+            lotteryPage.style.display = 'none';
+            uploadPage.style.display = 'block';
+            clearHistory();
+        });
+
+        // 清除记录按钮功能
+        const clearBtn = document.getElementById('clear-btn');
+        clearBtn.addEventListener('click', () => {
+            clearHistory();
+        });
+
+        // 清除历史记录函数
+        function clearHistory() {
+            selectedHistory = [];
+            updateHistoryBoard();
+        }
+
+        // 更新历史记录看板
+        function updateHistoryBoard() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+
+            if (selectedHistory.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">暂无记录</div>';
+            } else {
+                selectedHistory.forEach((name, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    item.innerHTML = `
+                        <div class="history-item-number">${index + 1}</div>
+                        <div>${name}</div>
+                    `;
+                    historyList.appendChild(item);
+                });
+            }
+        }
+
+        // 抽签页面逻辑
+        const lever = document.getElementById('lever');
+        const reels = Array.from({length: 6}, (_, i) => document.getElementById(`reel-${i}`));
+        const reelContainers = document.querySelectorAll('.reel-container');
+        let isSpinning = false;
+
+        const randomChars = '赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜戚谢邹喻柏水窦章云苏潘葛奚范彭郎鲁韦昌马苗凤花方俞任袁柳酆鲍史唐费廉岑薛雷贺倪汤滕殷罗毕郝邬安常乐于时傅皮卞齐康伍余元卜顾孟平黄和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董粱杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍虞万支柯昝管卢莫经房裘缪干解应宗丁宣贲邓郁单杭洪包诸左石崔吉钮龚程嵇邢滑裴陆荣翁荀羊於惠甄麴家封芮羿储靳汲邴糜松井段富巫乌焦巴弓牧隗山谷车侯宓蓬全郗班仰秋仲伊宫宁仇栾暴甘钭厉戎祖武符刘景詹束龙叶幸司韶郜黎蓟薄印宿白怀蒲邰从鄂索咸籍赖卓蔺屠蒙池乔阴鬱胥能苍双闻莘党翟谭贡劳逄姬申扶堵冉宰郦雍郤璩桑桂濮牛寿通边扈燕冀郏浦尚农温别庄晏柴瞿阎充慕连茹习宦艾鱼容向古易慎戈廖庾终暨居衡步都耿满弘匡国文寇广禄阙东欧殳沃利蔚越夔隆师巩厍聂晁勾敖融冷訾辛阚那简饶空曾毋沙乜养鞠须丰巢关蒯相查后荆红游竺权逯盖益桓公万俟司马上官欧阳夏侯诸葛闻人东方赫连皇甫尉迟公羊澹台公冶宗政濮阳淳于单于太叔申屠公孙仲孙轩辕令狐钟离宇文长孙慕容鲜于闾丘司徒司空亓官司寇仉督子车颛孙端木巫马公西漆雕乐正壤驷公良拓跋夹谷宰父谷粱晋楚闫法汝鄢涂钦段干百里东郭南门呼延归海羊舌微生岳帅缑亢况後有琴梁丘左丘东门西门商牟佘佴伯赏南宫墨哈谯笪年爱阳佟第五言福';
+
+        lever.addEventListener('click', () => {
+            if (isSpinning || nameList.length === 0) return;
+
+            // 获取未抽中的姓名列表
+            const availableNames = nameList.filter(name => !selectedHistory.includes(name));
+
+            // 如果所有姓名都已抽完
+            if (availableNames.length === 0) {
+                alert('所有姓名都已抽完！请点击清除记录按钮重新开始。');
+                return;
+            }
+
+            isSpinning = true;
+            lever.classList.add('pulled');
+
+            setTimeout(() => {
+                lever.classList.remove('pulled');
+            }, 300);
+
+            // 从未抽中的姓名中随机选择
+            const selectedName = availableNames[Math.floor(Math.random() * availableNames.length)];
+            const chars = selectedName.split('');
+
+            // 填充6个转轮：空格 + 字符
+            const reelContents = Array(6).fill('');
+            for (let i = 0; i < chars.length && i < 6; i++) {
+                reelContents[6 - chars.length + i] = chars[i];
+            }
+
+            // 开始旋转所有转轮
+            reels.forEach((reel, index) => {
+                reel.classList.add('spinning');
+                reel.innerHTML = '';
+
+                // 添加多个随机字符供旋转显示
+                for (let i = 0; i < 20; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'reel-item';
+                    div.textContent = randomChars[Math.floor(Math.random() * randomChars.length)];
+                    reel.appendChild(div);
+                }
+            });
+
+            // 依次停止转轮（从左到右）
+            const stopDelay = 2000 / 6;
+            reels.forEach((reel, index) => {
+                setTimeout(() => {
+                    reel.classList.remove('spinning');
+                    reel.innerHTML = '';
+                    const div = document.createElement('div');
+                    div.className = 'reel-item';
+                    div.textContent = reelContents[index];
+                    reel.appendChild(div);
+
+                    // 添加停止闪光效果
+                    reelContainers[index].classList.add('stopped');
+                    setTimeout(() => {
+                        reelContainers[index].classList.remove('stopped');
+                    }, 500);
+
+                    // 最后一个转轮停止后触发特效
+                    if (index === 5) {
+                        setTimeout(() => {
+                            // 添加到历史记录
+                            selectedHistory.push(selectedName);
+                            updateHistoryBoard();
+
+                            triggerEffects();
+                            isSpinning = false;
+                        }, 100);
+                    }
+                }, index * stopDelay);
+            });
+        });
+
+        // 特效函数
+        function triggerEffects() {
+            // 彩带效果
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    createConfetti();
+                }, i * 20);
+            }
+
+            // 烟花效果
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    createFirework();
+                }, i * 100);
+            }
+
+            // Emoji雨
+            const emojis = ['🎉', '🎊', '✨', '🌟', '⭐', '💫', '🎈', '🎆', '🎇', '🥳'];
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    createEmojiRain(emojis[Math.floor(Math.random() * emojis.length)]);
+                }, i * 100);
+            }
+        }
+
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.top = Math.random() < 0.5 ? '0px' : '100vh';
+            confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            confetti.style.width = Math.random() * 10 + 5 + 'px';
+            confetti.style.height = Math.random() * 20 + 10 + 'px';
+            confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 300 + 200;
+            const x = Math.cos(angle) * velocity;
+            const y = Math.sin(angle) * velocity;
+
+            confetti.animate([
+                { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+                { transform: `translate(${x}px, ${y}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+            ], {
+                duration: 2000,
+                easing: 'cubic-bezier(0, 0.5, 0.5, 1)'
+            });
+
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 2000);
+        }
+
+        function createFirework() {
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.textContent = '✨';
+            firework.style.left = Math.random() * 80 + 10 + '%';
+            firework.style.top = Math.random() * 80 + 10 + '%';
+            firework.style.setProperty('--x', (Math.random() - 0.5) * 200 + 'px');
+            firework.style.setProperty('--y', (Math.random() - 0.5) * 200 + 'px');
+            document.body.appendChild(firework);
+            setTimeout(() => firework.remove(), 2000);
+        }
+
+        function createEmojiRain(emoji) {
+            const emojiEl = document.createElement('div');
+            emojiEl.className = 'emoji-rain';
+            emojiEl.textContent = emoji;
+            emojiEl.style.left = Math.random() * 100 + '%';
+            emojiEl.style.top = '-50px';
+            document.body.appendChild(emojiEl);
+            setTimeout(() => emojiEl.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
